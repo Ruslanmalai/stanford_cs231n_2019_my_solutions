@@ -80,7 +80,8 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        HL1 = (X.dot(W1) + b1).clip(min = 0)
+        scores = HL1.dot(W2) + b2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +99,13 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        num_train = N
+        correct_class_scores = scores[range(num_train), y].reshape(-1, 1)
+        exp_sum_scores = np.sum(np.exp(scores), axis = 1).reshape(-1, 1)
+        L = -np.log(np.exp(correct_class_scores)/exp_sum_scores)
+        loss = np.sum(L)
+        loss /= num_train
+        loss += reg * (np.sum(W1*W1) + np.sum(W2*W2))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -110,8 +117,18 @@ class TwoLayerNet(object):
         # grads['W1'] should store the gradient on W1, and be a matrix of same size #
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-        pass
+        
+        softmax_deriv = (np.exp(scores) / np.exp(scores).sum(axis=1).reshape(-1, 1))
+        softmax_deriv[range(num_train), y] -= 1
+        dscores = softmax_deriv
+        dh1, dW2, db2 = dscores.dot(W2.T), HL1.T.dot(dscores), np.sum(dscores, axis = 0)
+        dW1, db1 = X.T.dot(dh1 *(HL1 > 0)), np.sum(dh1 *(HL1 > 0), axis= 0)
+        grads['W1'] = dW1 / N 
+        grads['b1'] = db1 / N
+        grads['W2'] = dW2 / N
+        grads['b2'] = db2 / N
+        grads['W1'] += 2 * reg * W1
+        grads['W2'] += 2 * reg * W2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
